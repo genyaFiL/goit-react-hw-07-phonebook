@@ -1,11 +1,20 @@
+import { useEffect } from 'react';
 import css from './ContactListStyles.module.css';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteContact } from 'redux/contactsSlice';
+import { deleteContact, fetchContacts } from 'redux/operations';
+import { getContacts, getError, getFilter, getLoading } from 'redux/selectors';
 
 export default function ContactList() {
-  const filterValue = useSelector(state => state.filter.value); // get value filter
-  const contacts = useSelector(state => state.contacts.contactsList); // get all  contacts
+  const filterValue = useSelector(getFilter);
+  const contacts = useSelector(getContacts);
+  const isLoading = useSelector(getLoading);
+  const isError = useSelector(getError);
+
   const dispatch = useDispatch(); //get actions
+
+  useEffect(() => {
+    dispatch(fetchContacts());
+  }, [dispatch]);
 
   const contactsFiltered = () => {
     return contacts.filter(contact =>
@@ -14,19 +23,29 @@ export default function ContactList() {
   };
 
   return (
-    <ul>
-      {contactsFiltered().map(({ name, number, id }) => (
-        <li key={id}>
-          {name}: {number}
-          <button
-            type="button"
-            onClick={() => dispatch(deleteContact(id))}
-            className={css.btn}
-          >
-            Delete
-          </button>
-        </li>
-      ))}
-    </ul>
+    <>
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <ul>
+          {contactsFiltered().map(({ name, phone, id }) => (
+            <li key={id}>
+              {name} : {phone}
+              <button
+                type="button"
+                onClick={() => dispatch(deleteContact(id))}
+                className={css.btn}
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {contacts.length === 0 && !isLoading && (
+        <p>There are no contacts in your phone book</p>
+      )}
+      {isError && <p>Something went wrong. An error has occurred: {isError}</p>}
+    </>
   );
 }
